@@ -1,0 +1,143 @@
+{
+    "SOPORTE": [
+        {
+            "input": "no puedo entrar",
+            "output": "Verifica tus credenciales y recarga la página"
+        },
+        {
+            "input": "error al iniciar sesión",
+            "output": "Reinicia el sistema e intenta nuevamente"
+        },
+        {
+            "input": "la página no carga",
+            "output": "Revisa tu conexión a internet"
+        },
+        {
+            "input": "necesito un router",
+            "output": "Te ayudo a encontrar un router adecuado"
+        },
+        {
+            "input": "necesito un switch",
+            "output": "Te ayudo a elegir un switch según tu necesidad"
+        },
+        {
+            "input": "quiero equipos de red",
+            "output": "Puedo recomendarte routers, switches o access point"
+        }
+    ],
+
+    "CORREO": [
+        { "input": "desistido", "output": "RECHAZADO" },
+        { "input": "no es viable", "output": "RECHAZADO" },
+        { "input": "no pueden continuar", "output": "RECHAZADO" },
+        { "input": "no hay equipos", "output": "RECHAZADO" },
+        { "input": "sin stock", "output": "RECHAZADO" },
+        { "input": "rechazado", "output": "RECHAZADO" },
+
+        { "input": "aprobamos", "output": "APROBADO" },
+        { "input": "pueden continuar", "output": "APROBADO" },
+        { "input": "todo conforme", "output": "APROBADO" },
+        { "input": "stock disponible", "output": "APROBADO" },
+        { "input": "pedido confirmado", "output": "APROBADO" },
+        { "input": "aprobado", "output": "APROBADO" },
+
+        { "input": "pago validado", "output": "APROBADO" },
+        { "input": "pago confirmado", "output": "APROBADO" },
+        { "input": "transferencia recibida", "output": "APROBADO" },
+        { "input": "pago recibido", "output": "APROBADO" },
+        { "input": "comprobante correcto", "output": "APROBADO" },
+
+        { "input": "pago rechazado", "output": "RECHAZADO" },
+        { "input": "no se recibió el pago", "output": "RECHAZADO" },
+        { "input": "comprobante inválido", "output": "RECHAZADO" },
+        { "input": "transferencia no válida", "output": "RECHAZADO" },
+        { "input": "pago no confirmado", "output": "RECHAZADO" }
+    ],
+
+    "BUSQUEDA": [
+        {
+            "input": "router",
+            "output": "router"
+        },
+        {
+            "input": "routers",
+            "output": "router"
+        },
+        {
+            "input": "necesito router",
+            "output": "router"
+        },
+        {
+            "input": "internet",
+            "output": "router"
+        },
+        {
+            "input": "switch",
+            "output": "switch"
+        },
+        {
+            "input": "switches",
+            "output": "switch"
+        },
+        {
+            "input": "necesito switch",
+            "output": "switch"
+        },
+        {
+            "input": "red cableada",
+            "output": "switch"
+        },
+        {
+            "input": "access point",
+            "output": "access point"
+        },
+        {
+            "input": "wifi",
+            "output": "access point"
+        },
+        {
+            "input": "necesito wifi",
+            "output": "access point"
+        }
+    ],
+
+    "TONO": [
+        { "input": "no puedo entrar", "output": "urgente" },
+        { "input": "necesito esto ya", "output": "urgente" },
+        { "input": "urgente", "output": "urgente" },
+
+        { "input": "esto no sirve", "output": "molesto" },
+        { "input": "carajo", "output": "molesto" },
+        { "input": "que mal", "output": "molesto" },
+
+        { "input": "por favor ayudame", "output": "amable" },
+        { "input": "gracias", "output": "amable" }
+    ],
+
+    "GENERO": [
+        { "input": "soy hombre", "output": "masculino" },
+        { "input": "soy masculino", "output": "masculino" },
+        { "input": "soy varon", "output": "masculino" },
+
+        { "input": "soy mujer", "output": "femenino" },
+        { "input": "soy femenina", "output": "femenino" },
+        { "input": "soy chica", "output": "femenino" }
+    ],
+
+    "COMENTARIO": [
+        { "input": "muy bueno", "output": "POSITIVO" },
+        { "input": "excelente servicio", "output": "POSITIVO" },
+        { "input": "me encanto", "output": "POSITIVO" },
+        { "input": "rapido y eficiente", "output": "POSITIVO" },
+        { "input": "todo perfecto", "output": "POSITIVO" },
+        { "input": "recomendado", "output": "POSITIVO" },
+
+        { "input": "muy malo", "output": "NEGATIVO" },
+        { "input": "pesimo servicio", "output": "NEGATIVO" },
+        { "input": "no funciona", "output": "NEGATIVO" },
+        { "input": "lento", "output": "NEGATIVO" },
+        { "input": "no me gusto", "output": "NEGATIVO" },
+        { "input": "horrible", "output": "NEGATIVO" },
+        { "input": "odio el producto", "output": "NEGATIVO" }
+    ]
+}
