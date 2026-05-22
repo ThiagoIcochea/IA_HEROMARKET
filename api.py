@@ -1,56 +1,50 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
-# 👇 IMPORTAS TODO TU SISTEMA IA
-from Ia import (
-    cargar,
-    procesar_soporte,
-    procesar_correo,
-    procesar_busqueda,
-    procesar_comentario
-)
+import Ia as ia
 
-# =========================
-# INICIAR API
-# =========================
 app = FastAPI()
 
-# cargar modelo al iniciar
-cargar()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# =========================
-# MODELO DE ENTRADA
-# =========================
+
+ia.cargar_json()
+ia.cargar_memoria_archivo()
+
 class Entrada(BaseModel):
     texto: str
-    modo: str  # soporte, correo, busqueda, comentario
+    modo: str
+    user: str = "default"
 
-# =========================
-# ENDPOINT PRINCIPAL
-# =========================
-@app.post("/ia")
-def usar_api(data_input: Entrada):
-    texto = data_input.texto
-    modo = data_input.modo.lower()
-
-    if modo == "soporte":
-        respuesta = procesar_soporte(texto)
-    elif modo == "correo":
-        respuesta = procesar_correo(texto)
-    elif modo == "busqueda":
-        respuesta = procesar_busqueda(texto)
-    elif modo == "comentario":
-        respuesta = procesar_comentario(texto)
-    else:
-        return {"error": "Modo inválido"}
-
-    return {
-        "respuesta": respuesta
-    }
-
-# =========================
-# TEST RÁPIDO
-# =========================
 @app.get("/")
 def home():
-    return {"mensaje": "API IA funcionando 🚀"}
+    return {"mensaje": "IA funcionando correctamente"}
+
+def ejecutar(func, *args):
+    try:
+        return func(*args)
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/ia")
+def main(data: Entrada):
+
+    modo = data.modo.lower()
+
+    if modo == "soporte":
+        return ejecutar(ia.procesar_soporte, data.texto, data.user)
+
+    if modo == "correo":
+        return ejecutar(ia.procesar_correo, data.texto)
+
+    if modo == "comentario":
+        return ejecutar(ia.procesar_comentario, data.texto)
+
+    return {"error": "Modo inválido"}

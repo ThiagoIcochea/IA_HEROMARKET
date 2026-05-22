@@ -1,323 +1,224 @@
 import json
-import random
+import numpy as np
+import os
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# =========================
-# MODELO IA
-# =========================
-modelo = SentenceTransformer('all-MiniLM-L6-v2')
 
-# =========================
-# PERFIL USUARIO
-# =========================
-usuario = {
-    "nombre": None,
-    "genero": None
-}
+modelo = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
-# =========================
-# CARGAR / GUARDAR
-# =========================
-def cargar():
+data = {}
+cache = {}
+
+MEM_FILE = "memoria_usuarios.json"
+memoria = {}
+
+FILTROS_FILE = "ia_modelo.json"
+filtros = {}
+
+
+def cargar_json():
     global data
-    try:
-        with open("ia_modelo.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-        print("📂 Modelo cargado")
-    except:
-        print("⚠️ No hay modelo, creando nuevo...")
-        data = {
-            "SOPORTE": [],
-            "CORREO": [],
-            "BUSQUEDA": [],
-            "TONO": [],
-            "GENERO": [],
-            "COMENTARIO": []
-        }
+    with open("ia_modelo.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-def guardar():
-    with open("ia_modelo.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-    print("💾 Guardado correctamente")
 
-# =========================
-# IA
-# =========================
-def embed(textos):
-    return modelo.encode(textos)
-
-def similitud(texto, ejemplos):
-    if not ejemplos:
-        return None
-
-    inputs = [e["input"] for e in ejemplos]
-    emb_inputs = embed(inputs)
-    emb_texto = embed([texto])
-
-    sim = cosine_similarity(emb_texto, emb_inputs)[0]
-    idx = sim.argmax()
-    return idx
-
-# =========================
-# NORMALIZAR
-# =========================
-def limpiar_texto(texto):
-    texto = texto.lower().strip()
-    texto = texto.replace("ncecesito", "necesito")
-    texto = texto.replace("necesit", "necesito")
-    return texto
-
-# =========================
-# DETECTORES
-# =========================
-def detectar_producto(texto):
-    texto = limpiar_texto(texto)
-
-    if "router" in texto or "internet" in texto:
-        return "router"
-    if "switch" in texto:
-        return "switch"
-    if "wifi" in texto or "access point" in texto:
-        return "access point"
-
-    return None
-
-def detectar_tono(texto):
-    idx = similitud(texto, data["TONO"])
-    if idx is None:
-        return "normal"
-    return data["TONO"][idx]["output"]
-
-def detectar_nombre(texto):
-    texto = texto.lower()
-
-    if "me llamo" in texto:
-        nombre = texto.split("me llamo")[-1].strip().split()[0]
-        return nombre.capitalize()
-
-    if "soy" in texto:
-        nombre = texto.split("soy")[-1].strip().split()[0]
-        return nombre.capitalize()
-
-    return None
-
-def detectar_genero(texto):
-    texto = limpiar_texto(texto)
-
-    if "soy hombre" in texto:
-        return "masculino"
-    if "soy mujer" in texto:
-        return "femenino"
-
-    idx = similitud(texto, data["GENERO"])
-    if idx is None:
-        return None
-
-    return data["GENERO"][idx]["output"]
-
-# =========================
-# PERSONALIZAR
-# =========================
-def personalizar(respuesta, tono):
-    prefijo = ""
-
-    if usuario["nombre"]:
-        if usuario["genero"] == "femenino":
-            prefijo += f"{usuario['nombre']}, "
-        else:
-            prefijo += f"{usuario['nombre']}, "
-
-    if tono == "urgente":
-        prefijo += "lo vemos de inmediato. "
-    elif tono == "molesto":
-        prefijo += "lamento el inconveniente. "
-    elif tono == "amable":
-        prefijo += "con gusto te ayudo. "
-
-    return prefijo + respuesta
-
-# =========================
-# RESPUESTA PRODUCTO
-# =========================
-def responder_producto(producto):
-    if producto == "router":
-        return "Te ayudo con routers 👍 ¿Lo necesitas para hogar o empresa?"
-    if producto == "switch":
-        return "Perfecto 👍 ¿Cuántos equipos necesitas conectar?"
-    if producto == "access point":
-        return "Te ayudo con WiFi 👍 ¿Es para oficina o negocio?"
-    return None
-
-# =========================
-# PROCESOS
-# =========================
-def procesar_soporte(texto):
-    texto = limpiar_texto(texto)
-
-    # detectar nombre
-    nombre = detectar_nombre(texto)
-    if nombre:
-        usuario["nombre"] = nombre
-
-    # detectar genero
-    genero = detectar_genero(texto)
-    if genero:
-        usuario["genero"] = genero
-
-    tono = detectar_tono(texto)
-
-    # detectar producto
-    producto = detectar_producto(texto)
-    if producto:
-        respuesta = responder_producto(producto)
+def cargar_filtros():
+    global filtros
+    if os.path.exists(FILTROS_FILE):
+        with open(FILTROS_FILE, "r", encoding="utf-8") as f:
+            filtros = json.load(f)
     else:
-        idx = similitud(texto, data["SOPORTE"])
-        if idx is None:
-            respuesta = "No tengo suficiente información aún."
-        else:
-            base = data["SOPORTE"][idx]["output"]
-            variantes = [
-                base,
-                "Puedes intentar: " + base,
-                "Te recomiendo: " + base
-            ]
-            respuesta = random.choice(variantes)
-
-    # 🔥 PRESENTACIÓN DE LA IA
-    presentacion = "Hola, soy tu asistente de soporte. "
-
-    return presentacion + personalizar(respuesta, tono)
+        filtros = {"INAPROPIADO": [], "BLOQUEADO": []}
 
 
-def procesar_correo(texto):
-    idx = similitud(texto, data["CORREO"])
-    if idx is None:
-        return "SIN DATOS"
-    return data["CORREO"][idx]["output"]
+def cargar_memoria_archivo():
+    global memoria
+    if os.path.exists(MEM_FILE):
+        with open(MEM_FILE, "r", encoding="utf-8") as f:
+            memoria = json.load(f)
+    else:
+        memoria = {}
+
+def guardar_memoria_archivo():
+    with open(MEM_FILE, "w", encoding="utf-8") as f:
+        json.dump(memoria, f, ensure_ascii=False, indent=4)
+
+def get_user(user):
+    if user not in memoria:
+        memoria[user] = {
+            "nombre": None,
+            "historial": []
+        }
+    return memoria[user]
 
 
-def procesar_busqueda(texto):
-    texto = limpiar_texto(texto)
-
-    producto = detectar_producto(texto)
-    if producto:
-        return responder_producto(producto)
-
-    idx = similitud(texto, data["BUSQUEDA"])
-    if idx is None:
-        return "No encontré el producto."
-
-    producto = data["BUSQUEDA"][idx]["output"]
-    return responder_producto(producto)
+def limpiar(t):
+    return t.lower().strip()
 
 
-def procesar_comentario(texto):
-    texto = limpiar_texto(texto)
+def emb(cat):
+    if cat not in cache:
+        cache[cat] = modelo.encode([e["input"] for e in data[cat]])
+    return cache[cat]
 
-    # reglas rápidas
-    if any(p in texto for p in ["bueno", "excelente", "perfecto", "recomendado"]):
-        return "POSITIVO"
+def match(texto, cat):
+    if cat not in data or len(data[cat]) == 0:
+        return None
 
-    if any(p in texto for p in ["malo", "pésimo", "horrible", "lento"]):
+    t_emb = modelo.encode([texto])
+    d_emb = emb(cat)
+
+    sim = cosine_similarity(t_emb, d_emb)[0]
+    idx = np.argmax(sim)
+
+    if sim[idx] < 0.55:
+        return None
+
+    return data[cat][idx]["output"]
+
+
+def moderar(t):
+    t = limpiar(t)
+
+    for palabra in filtros.get("INAPROPIADO", []):
+        if palabra in t:
+            return "INAPROPIADO"
+
+    for palabra in filtros.get("BLOQUEADO", []):
+        if palabra in t:
+            return "BLOQUEADO"
+
+    return "OK"
+
+def emocion(t):
+    t = limpiar(t)
+
+    if any(x in t for x in ["urgente", "ya", "rapido"]):
+        return "URGENTE"
+
+    if any(x in t for x in ["molesto", "enojado", "odio"]):
         return "NEGATIVO"
 
-    idx = similitud(texto, data["COMENTARIO"])
-    if idx is None:
-        return "NEUTRO"
+    if any(x in t for x in ["gracias", "excelente", "bien"]):
+        return "POSITIVO"
 
-    return data["COMENTARIO"][idx]["output"]
+    return "NEUTRO"
 
-# =========================
-# ENTRENAMIENTO
-# =========================
-def entrenar():
-    print("\nCategorías: SOPORTE / CORREO / BUSQUEDA / TONO / GENERO / COMENTARIO")
-    cat = input("Categoría: ").upper()
 
-    if cat not in data:
-        print("❌ Categoría inválida")
-        return
+def procesar_soporte(t, user="default"):
 
-    entrada = input("Entrada: ")
-    salida = input("Salida: ")
+    if moderar(t) != "OK":
+        return {
+            "tipo": "SOPORTE",
+            "estado": "BLOQUEADO",
+            "respuesta": "No permitido"
+        }
 
-    data[cat].append({
-        "input": entrada,
-        "output": salida
-    })
+    t = limpiar(t)
+    u = get_user(user)
 
-    guardar()
-    print("✅ Aprendido correctamente")
+   
+    if "me llamo" in t:
+        nombre = t.split("me llamo")[-1].strip().capitalize()
+        u["nombre"] = nombre
 
-# =========================
-# TEST
-# =========================
-def testear():
-    print("\n🧪 TEST")
-    modo = input("Modo (soporte/correo/busqueda/comentario): ").lower()
+        r = f"👋 Mucho gusto {nombre}, soy Hero Market IA."
 
-    while True:
-        texto = input("\nInput ('salir'): ")
-        if texto == "salir":
-            break
+        u["historial"].append({"in": t, "out": r})
+        guardar_memoria_archivo()
 
-        if modo == "soporte":
-            print("👉", procesar_soporte(texto))
-        elif modo == "correo":
-            print("👉", procesar_correo(texto))
-        elif modo == "busqueda":
-            print("👉", procesar_busqueda(texto))
-        elif modo == "comentario":
-            print("👉", procesar_comentario(texto))
+        return {"tipo": "SOPORTE", "estado": "OK", "respuesta": r}
 
-# =========================
-# USO
-# =========================
-def usar():
-    print("\n🤖 IA")
-    modo = input("Modo (soporte/correo/busqueda/comentario): ").lower()
+  
+    if any(x in t for x in ["hola", "buenas", "hi", "hello"]):
 
-    while True:
-        texto = input("\nTú: ")
-        if texto == "salir":
-            break
+        nombre = u["nombre"]
 
-        if modo == "soporte":
-            print("IA:", procesar_soporte(texto))
-        elif modo == "correo":
-            print("IA:", procesar_correo(texto))
-        elif modo == "busqueda":
-            print("IA:", procesar_busqueda(texto))
-        elif modo == "comentario":
-            print("IA:", procesar_comentario(texto))
+        if nombre:
+            r = f"🤖 Hola {nombre}, soy Hero Market IA."
+        else:
+            r = "🤖 Hola, soy Hero Market IA."
 
-# =========================
-# MENU
-# =========================
-def menu():
-    cargar()
+        r += "\n📩 notiene@gmail.com\n📱 968085026"
 
-    while True:
-        print("\n===== MENU =====")
-        print("1. Usar IA")
-        print("2. Entrenar")
-        print("3. Testear")
-        print("4. Guardar")
-        print("5. Salir")
+        u["historial"].append({"in": t, "out": r})
+        guardar_memoria_archivo()
 
-        op = input("Opción: ")
+        return {"tipo": "SOPORTE", "estado": "OK", "respuesta": r}
 
-        if op == "1":
-            usar()
-        elif op == "2":
-            entrenar()
-        elif op == "3":
-            testear()
-        elif op == "4":
-            guardar()
-        elif op == "5":
-            break
+   
+    if "cómo me llamo" in t or "como me llamo" in t:
+        nombre = u["nombre"]
 
-if __name__ == "__main__":
-    menu()
+        if nombre:
+            r = f"👀 Te llamas {nombre}"
+        else:
+            r = "No recuerdo tu nombre aún"
+
+        return {"tipo": "SOPORTE", "estado": "OK", "respuesta": r}
+
+   
+    if "recuerdas" in t:
+        hist = u["historial"]
+
+        if len(hist) == 0:
+            r = "No tengo recuerdos contigo"
+        else:
+            r = "Recuerdo:\n" + "\n".join(
+                [f"- {h['in']} → {h['out']}" for h in hist[-5:]]
+            )
+
+        return {"tipo": "SOPORTE", "estado": "OK", "respuesta": r}
+
+    
+    r = match(t, "SOPORTE")
+
+    if r:
+        u["historial"].append({"in": t, "out": r})
+        guardar_memoria_archivo()
+        return {"tipo": "SOPORTE", "estado": "OK", "respuesta": r}
+
+    r = "No tengo respuesta exacta 😕"
+
+    u["historial"].append({"in": t, "out": r})
+    guardar_memoria_archivo()
+
+    return {"tipo": "SOPORTE", "estado": "OK", "respuesta": r}
+
+
+def procesar_correo(t):
+
+    t = limpiar(t)
+    r = match(t, "CORREO")
+
+    if r:
+        return {"tipo": "CORREO", "estado": "OK", "resultado": r}
+
+    return {"tipo": "CORREO", "estado": "OK", "resultado": "NEUTRO"}
+
+
+def procesar_comentario(t):
+
+    if moderar(t) != "OK":
+        return {
+            "tipo": "COMENTARIO",
+            "estado": "BLOQUEADO",
+            "sentimiento": "BLOQUEADO"
+        }
+
+    emo = match(t, "COMENTARIO")
+
+    if emo:
+        return {"tipo": "COMENTARIO", "estado": "OK", "sentimiento": emo}
+
+    return {
+        "tipo": "COMENTARIO",
+        "estado": "OK",
+        "sentimiento": emocion(t)
+    }
+
+
+cargar_json()
+cargar_memoria_archivo()
+cargar_filtros()
